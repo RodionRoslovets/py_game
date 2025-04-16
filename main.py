@@ -11,18 +11,22 @@ class MyWindow(arcade.Window):
         super().__init__(width, height, title)
         arcade.set_background_color(arcade.color.BLACK)  
 
-        self.image = arcade.load_texture("./src/assets/placeholder.png")
+        self.openinig_image = arcade.load_texture("./src/assets/images/placeholder.png")
+        self.openinig_song = arcade.load_sound("./src/assets/sound/songs/raise_your_horns.wav", streaming=True)
         self.alpha = 255  
         self.start_time = time.time()
         self.fade_out_started = False
+
+        self.openinig_song.play(volume=0.5)
     
     def on_draw(self):
         self.clear()  
         arcade.draw_texture_rect(
-            self.image,
+            self.openinig_image,
             arcade.XYWH(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT),
             alpha=self.alpha
         )
+        
 
     def on_update(self, delta_time):
         current_time = time.time()
