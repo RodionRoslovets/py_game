@@ -1,6 +1,6 @@
 import arcade
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
+from src.constants import SCREEN_HEIGHT, SCREEN_WIDTH
+
 class Player:
     def __init__(self):
         self.center_x = SCREEN_WIDTH // 2

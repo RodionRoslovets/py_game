@@ -1,13 +1,8 @@
 import arcade
 import time
 from src.classes.player import Player
-
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
-SCREEN_TITLE = "Raven Rage: Soulburner's Last Chord"
-BUTTON_WIDTH = 200
-BUTTON_HEIGHT = 50
-PLAYER_SPEED = 10
+from src.classes.enemy import Enemy
+from src.constants import SCREEN_HEIGHT, SCREEN_TITLE, SCREEN_WIDTH, BUTTON_WIDTH, BUTTON_HEIGHT, PLAYER_SPEED
 
 CONTROLS = (arcade.key.LEFT, 
             arcade.key.RIGHT, 
@@ -47,6 +42,10 @@ class GameWindow(arcade.Window):
         self.camera = arcade.Camera2D()
 
         self.openinig_song.play(volume=0.5)
+
+        self.enemies = []
+        self.spawn_timer = 0
+        self.spawn_interval = 2.0 
     
     def on_draw(self):
         self.clear()  
@@ -65,6 +64,12 @@ class GameWindow(arcade.Window):
     def on_update(self, delta_time):
         current_time = time.time()
 
+        if self.current_screen == 'game':
+            self.player.update()
+            self.update_enemies(delta_time)
+            self.check_enemy_collisions()
+            self.check_collisions()
+
         if current_time - self.start_time >= 3 and not self.fade_out_started:
             self.fade_out_started = True
         
@@ -80,6 +85,78 @@ class GameWindow(arcade.Window):
 
         if self.player and self.player.center_x > SCREEN_WIDTH / 2:
             self.camera.position = (self.player.center_x, self.camera.position.y)
+
+    def update_enemies(self, delta_time):
+        self.spawn_timer += delta_time
+        
+        # Спавн только если игрок не у правой границы
+        if (self.spawn_timer >= self.spawn_interval 
+            and len(self.enemies) < 10
+            and self.player.center_x < SCREEN_WIDTH * 2.5):
+            
+            self.spawn_timer = 0
+            self.enemies.append(Enemy(self.player))
+        
+        for enemy in self.enemies:
+            enemy.update()
+
+    def check_collisions(self):
+        # Проверка коллизий игрока с врагами
+        enemies_to_remove = []
+        for enemy in self.enemies:
+            if (abs(self.player.center_x - enemy.center_x) < (self.player.width + enemy.width)/2 and
+                abs(self.player.center_y - enemy.center_y) < (self.player.height + enemy.height)/2):
+                enemies_to_remove.append(enemy)
+
+        # Удаление врагов с которыми было столкновение
+        for enemy in enemies_to_remove:
+            self.enemies.remove(enemy)
+
+    def check_enemy_collisions(self):
+        # Проверяем коллизии между всеми парами врагов
+        for i in range(len(self.enemies)):
+            enemy1 = self.enemies[i]
+            for j in range(i+1, len(self.enemies)):
+                enemy2 = self.enemies[j]
+                
+                # Расчет пересечения по осям
+                dx = abs(enemy1.center_x - enemy2.center_x)
+                dy = abs(enemy1.center_y - enemy2.center_y)
+                combined_width = (enemy1.width + enemy2.width) / 2
+                combined_height = (enemy1.height + enemy2.height) / 2
+                
+                if dx < combined_width and dy < combined_height:
+                    # Вычисляем вектор отталкивания
+                    overlap_x = combined_width - dx
+                    overlap_y = combined_height - dy
+                    
+                    # Корректируем позиции врагов
+                    if overlap_x > overlap_y:
+                        if enemy1.center_x < enemy2.center_x:
+                            enemy1.center_x -= overlap_x/2
+                            enemy2.center_x += overlap_x/2
+                        else:
+                            enemy1.center_x += overlap_x/2
+                            enemy2.center_x -= overlap_x/2
+                    else:
+                        if enemy1.center_y < enemy2.center_y:
+                            enemy1.center_y -= overlap_y/2
+                            enemy2.center_y += overlap_y/2
+                        else:
+                            enemy1.center_y += overlap_y/2
+                            enemy2.center_y -= overlap_y/2
+
+        for enemy in self.enemies:
+            enemy.center_x = max(
+                enemy.width//2, 
+                min(SCREEN_WIDTH * 3 - enemy.width//2, 
+                enemy.center_x
+            ))
+            enemy.center_y = max(
+                enemy.height//2, 
+                min((SCREEN_HEIGHT // 3 * 2) - enemy.height//3, 
+                enemy.center_y
+            ))
 
     def draw_menu(self):
         arcade.draw_texture_rect(
@@ -110,6 +187,9 @@ class GameWindow(arcade.Window):
 
         self.player.draw()
         self.camera.use()
+
+        for enemy in self.enemies:
+            enemy.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
             if button == arcade.MOUSE_BUTTON_LEFT:
