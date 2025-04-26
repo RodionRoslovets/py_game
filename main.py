@@ -1,12 +1,22 @@
 import arcade
 import time
+from src.classes.player import Player
 
-# Настройки окна
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Raven Rage: Soulburner's Last Chord"
 BUTTON_WIDTH = 200
 BUTTON_HEIGHT = 50
+PLAYER_SPEED = 10
+
+CONTROLS = (arcade.key.LEFT, 
+            arcade.key.RIGHT, 
+            arcade.key.A, 
+            arcade.key.D, 
+            arcade.key.UP,
+            arcade.key.W, 
+            arcade.key.DOWN, 
+            arcade.key.S)
 
 class GameWindow(arcade.Window):
     def __init__(self, width, height, title):
@@ -31,6 +41,10 @@ class GameWindow(arcade.Window):
             {"text": "Настройки", "y": 300, "action": "settings"},
             {"text": "Выход", "y": 200, "action": "exit"}
         ]
+        
+        self.player = Player()
+
+        self.camera = arcade.Camera2D()
 
         self.openinig_song.play(volume=0.5)
     
@@ -61,6 +75,12 @@ class GameWindow(arcade.Window):
             self.alpha = 0
             self.current_screen = "menu"
 
+        if self.current_screen == 'game':
+            self.player.update()
+
+        if self.player and self.player.center_x > SCREEN_WIDTH / 2:
+            self.camera.position = (self.player.center_x, self.camera.position.y)
+
     def draw_menu(self):
         arcade.draw_texture_rect(
             self.menu_background,
@@ -85,8 +105,11 @@ class GameWindow(arcade.Window):
     def draw_game(self):
         arcade.draw_texture_rect(
             self.game_background,
-            arcade.XYWH(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT),
+            arcade.XYWH(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH * 3, SCREEN_HEIGHT),
         )
+
+        self.player.draw()
+        self.camera.use()
 
     def on_mouse_press(self, x, y, button, modifiers):
             if button == arcade.MOUSE_BUTTON_LEFT:
@@ -108,6 +131,26 @@ class GameWindow(arcade.Window):
             arcade.close_window()
         elif action == "start":
             self.current_screen = "game"
+
+    def on_key_press(self, symbol, modifiers):
+        if self.current_screen == "game" and self.player:
+            if symbol == arcade.key.LEFT or symbol == arcade.key.A:
+                self.player.change_x = -PLAYER_SPEED
+            elif symbol == arcade.key.RIGHT or symbol == arcade.key.D:
+                self.player.change_x = PLAYER_SPEED
+            elif symbol == arcade.key.UP or symbol == arcade.key.W:
+                self.player.change_y = PLAYER_SPEED
+            elif symbol == arcade.key.DOWN or symbol == arcade.key.S:
+                self.player.change_y = -PLAYER_SPEED
+
+    def on_key_release(self, symbol, modifiers):
+        if self.current_screen == "game" and self.player:
+            if symbol in CONTROLS:
+                self.player.change_x = 0
+                self.player.change_y = 0
+
+    def change_camera_position():
+        print('change')
 
 def main():
     GameWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
