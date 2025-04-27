@@ -11,6 +11,9 @@ class Enemy:
         self.height = 50
         self.speed = 3
         self.texture = arcade.load_texture("./src/assets/images/enemy.png")
+        self.last_damage_time = 0
+        self.damage_interval = 2.0
+        self.moving = True
         
         # Спавн справа от игрока с отступом 200 пикселей
         self.center_x = player.center_x + SCREEN_WIDTH + 200
@@ -25,25 +28,26 @@ class Enemy:
         dx = self.player.center_x - self.center_x
         dy = self.player.center_y - self.center_y
         distance = math.hypot(dx, dy)
-        
-        if distance > 0:
-            # Движение по обеим осям с нормализацией вектора
-            self.center_x += self.speed * dx / distance
-            self.center_y += self.speed * dy / distance
-        
-        # Вертикальные ограничения как у игрока
-        self.center_y = max(
-            self.height//2, 
-            min((SCREEN_HEIGHT // 3 * 2) - self.height//3, 
-            self.center_y
-        ))
-        
-        # Горизонтальные ограничения игровой зоны
-        self.center_x = max(
-            self.width//2, 
-            min(SCREEN_WIDTH * 3 - self.width//2, 
-            self.center_x
-        ))
+
+        if self.moving == True:
+            if distance > 0:
+                # Движение по обеим осям с нормализацией вектора
+                self.center_x += self.speed * dx / distance
+                self.center_y += self.speed * dy / distance
+            
+            # Вертикальные ограничения как у игрока
+            self.center_y = max(
+                self.height//2, 
+                min((SCREEN_HEIGHT // 3 * 2) - self.height//3, 
+                self.center_y
+            ))
+            
+            # Горизонтальные ограничения игровой зоны
+            self.center_x = max(
+                self.width//2, 
+                min(SCREEN_WIDTH * 3 - self.width//2, 
+                self.center_x
+            ))
 
     def draw(self):
         arcade.draw_texture_rect(

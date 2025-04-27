@@ -103,16 +103,21 @@ class GameWindow(arcade.Window):
             enemy.update()
 
     def check_collisions(self):
-        enemies_to_remove = []
+        current_time = time.time()
+        
         for enemy in self.enemies:
+            # Проверяем коллизию с игроком
             if (abs(self.player.center_x - enemy.center_x) < (self.player.width + enemy.width)/2 and
                 abs(self.player.center_y - enemy.center_y) < (self.player.height + enemy.height)/2):
-                enemies_to_remove.append(enemy)
-                # Наносим урон игроку
-                self.player.current_health = max(0, self.player.current_health - 10)
-        
-        for enemy in enemies_to_remove:
-            self.enemies.remove(enemy)
+
+                enemy.moving = False
+
+                # Проверяем можно ли нанести урон
+                if current_time - enemy.last_damage_time >= enemy.damage_interval:
+                    self.player.current_health = max(0, self.player.current_health - 10)
+                    enemy.last_damage_time = current_time
+            else:
+                enemy.moving = True
 
     def check_enemy_collisions(self):
         # Проверяем коллизии между всеми парами врагов
