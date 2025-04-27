@@ -9,7 +9,7 @@ class Player:
         self.height = 50
         self.color = arcade.color.BLUE
         self.texture = arcade.load_texture("./src/assets/images/player.png")
-        self.max_health = 100
+        self.max_health = 200
         self.current_health = self.max_health
         self.energy = 0
         

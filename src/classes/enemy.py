@@ -9,7 +9,7 @@ class Enemy:
         self.player = player
         self.width = 50
         self.height = 50
-        self.speed = 3
+        self.speed = 2
         self.health = 100
         self.texture = arcade.load_texture("./src/assets/images/enemy.png")
         self.last_damage_time = 0

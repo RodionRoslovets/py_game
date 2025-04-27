@@ -2,7 +2,7 @@ import arcade
 import time
 from src.classes.player import Player
 from src.classes.enemy import Enemy
-from src.constants import SCREEN_HEIGHT, SCREEN_TITLE, SCREEN_WIDTH, BUTTON_WIDTH, BUTTON_HEIGHT, PLAYER_SPEED
+from src.constants import SCREEN_HEIGHT, SCREEN_TITLE, SCREEN_WIDTH, BUTTON_WIDTH, BUTTON_HEIGHT, PLAYER_SPEED, PLAYER_ATTAC_DISTANCE
 
 CONTROLS = (arcade.key.LEFT, 
             arcade.key.RIGHT, 
@@ -101,6 +101,9 @@ class GameWindow(arcade.Window):
         
         for enemy in self.enemies:
             if enemy.health <= 0:
+                if self.player.energy < 100:
+                    self.player.energy += 10
+
                 self.enemies.remove(enemy)
             else:
                 enemy.update()
@@ -270,19 +273,18 @@ class GameWindow(arcade.Window):
             # Базовая атака
             elif symbol == arcade.key.SPACE:
                 for enemy in self.enemies:
-                    if (abs(self.player.center_x - enemy.center_x) < (self.player.width + enemy.width)/2 and
-                        abs(self.player.center_y - enemy.center_y) < (self.player.height + enemy.height)/2):
+                    if (abs(self.player.center_x + PLAYER_ATTAC_DISTANCE - enemy.center_x) < (self.player.width + PLAYER_ATTAC_DISTANCE + enemy.width)/2 and
+                        abs(self.player.center_y + PLAYER_ATTAC_DISTANCE - enemy.center_y) < (self.player.height + PLAYER_ATTAC_DISTANCE + enemy.height)/2):
 
                         enemy.health -= 50
 
-                        if self.player.energy < 100:
-                            self.player.energy += 10
             # Особая атака
             elif symbol == arcade.key.F:
                 if self.player.energy == 100:
                     for enemy in self.enemies:
-                        enemy.health -= 50
-
+                        if self.camera.point_in_view((enemy.center_x, enemy.center_y)):
+                            enemy.health -= enemy.health
+                        
                     self.player.energy = 0
 
     def on_key_release(self, symbol, modifiers):
