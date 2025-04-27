@@ -24,7 +24,9 @@ class GameWindow(arcade.Window):
         self.openinig_song = arcade.load_sound("./src/assets/sound/songs/raise_your_horns.wav", streaming=True)
         self.menu_background = arcade.load_texture("./src/assets/images/menu_bg.png")
         self.game_background = arcade.load_texture("./src/assets/images/game-bg.png")
-        self.alpha = 255  
+        self.alpha = 255
+        self.heart_texture = arcade.load_texture("./src/assets/images/heart.png")
+        self.heart_size = 30
         self.start_time = time.time()
         self.fade_out_started = False
         self.button_textures = {
@@ -101,14 +103,14 @@ class GameWindow(arcade.Window):
             enemy.update()
 
     def check_collisions(self):
-        # Проверка коллизий игрока с врагами
         enemies_to_remove = []
         for enemy in self.enemies:
             if (abs(self.player.center_x - enemy.center_x) < (self.player.width + enemy.width)/2 and
                 abs(self.player.center_y - enemy.center_y) < (self.player.height + enemy.height)/2):
                 enemies_to_remove.append(enemy)
-
-        # Удаление врагов с которыми было столкновение
+                # Наносим урон игроку
+                self.player.current_health = max(0, self.player.current_health - 10)
+        
         for enemy in enemies_to_remove:
             self.enemies.remove(enemy)
 
@@ -182,7 +184,7 @@ class GameWindow(arcade.Window):
     def draw_game(self):
         arcade.draw_texture_rect(
             self.game_background,
-            arcade.XYWH(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH * 3, SCREEN_HEIGHT),
+            arcade.XYWH(SCREEN_WIDTH * 3  / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH * 3, SCREEN_HEIGHT),
         )
 
         self.player.draw()
@@ -190,6 +192,27 @@ class GameWindow(arcade.Window):
 
         for enemy in self.enemies:
             enemy.draw()
+
+        self.draw_health()
+
+    def draw_health(self):
+        start_x = self.camera.position.x - (SCREEN_WIDTH / 2) + 30
+        start_y = SCREEN_HEIGHT - 50
+        
+        arcade.draw_texture_rect(
+            self.heart_texture,
+            arcade.XYWH(start_x, start_y,self.heart_size, self.heart_size)
+        )
+        
+        arcade.draw_text(
+            f"{self.player.current_health}",
+            start_x + 50,
+            start_y - 10,
+            arcade.color.BLACK,
+            18,
+            font_name="Arial",
+            anchor_y="center"
+        )
 
     def on_mouse_press(self, x, y, button, modifiers):
             if button == arcade.MOUSE_BUTTON_LEFT:
