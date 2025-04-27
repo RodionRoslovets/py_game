@@ -11,6 +11,7 @@ class Player:
         self.texture = arcade.load_texture("./src/assets/images/player.png")
         self.max_health = 100
         self.current_health = self.max_health
+        self.energy = 0
         
         self.change_x = 0
         self.change_y = 0

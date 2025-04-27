@@ -100,7 +100,10 @@ class GameWindow(arcade.Window):
             self.enemies.append(Enemy(self.player))
         
         for enemy in self.enemies:
-            enemy.update()
+            if enemy.health <= 0:
+                self.enemies.remove(enemy)
+            else:
+                enemy.update()
 
     def check_collisions(self):
         current_time = time.time()
@@ -198,21 +201,36 @@ class GameWindow(arcade.Window):
         for enemy in self.enemies:
             enemy.draw()
 
-        self.draw_health()
+        self.draw_palyer_info()
 
-    def draw_health(self):
+    def draw_palyer_info(self):
         start_x = self.camera.position.x - (SCREEN_WIDTH / 2) + 30
         start_y = SCREEN_HEIGHT - 50
         
         arcade.draw_texture_rect(
             self.heart_texture,
-            arcade.XYWH(start_x, start_y,self.heart_size, self.heart_size)
+            arcade.XYWH(start_x, start_y, self.heart_size, self.heart_size)
         )
         
         arcade.draw_text(
             f"{self.player.current_health}",
             start_x + 50,
-            start_y - 10,
+            start_y,
+            arcade.color.BLACK,
+            18,
+            font_name="Arial",
+            anchor_y="center"
+        )
+
+        arcade.draw_texture_rect(
+            self.heart_texture,
+            arcade.XYWH(start_x, start_y - 50, self.heart_size, self.heart_size)
+        )
+        
+        arcade.draw_text(
+            f"{self.player.energy}",
+            start_x + 50,
+            start_y - 50,
             arcade.color.BLACK,
             18,
             font_name="Arial",
@@ -250,6 +268,23 @@ class GameWindow(arcade.Window):
                 self.player.change_y = PLAYER_SPEED
             elif symbol == arcade.key.DOWN or symbol == arcade.key.S:
                 self.player.change_y = -PLAYER_SPEED
+            # Базовая атака
+            elif symbol == arcade.key.SPACE:
+                for enemy in self.enemies:
+                    if (abs(self.player.center_x - enemy.center_x) < (self.player.width + enemy.width)/2 and
+                        abs(self.player.center_y - enemy.center_y) < (self.player.height + enemy.height)/2):
+
+                        enemy.health -= 50
+
+                        if self.player.energy < 100:
+                            self.player.energy += 10
+            # Особая атака
+            elif symbol == arcade.key.F:
+                if self.player.energy == 100:
+                    for enemy in self.enemies:
+                        enemy.health -= 50
+
+                    self.player.energy = 0
 
     def on_key_release(self, symbol, modifiers):
         if self.current_screen == "game" and self.player:
