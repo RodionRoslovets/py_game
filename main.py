@@ -182,12 +182,12 @@ class GameWindow(arcade.Window):
                 arcade.XYWH(SCREEN_WIDTH / 2, button['y'], BUTTON_WIDTH, BUTTON_HEIGHT),
             )
             
-            arcade.draw_text(
+            arcade.Text(
                 button["text"],
                 SCREEN_WIDTH//2, button["y"],
                 arcade.color.BLACK, 24,
                 anchor_x="center", anchor_y="center"
-            )
+            ).draw()
 
     def draw_game(self):
         arcade.draw_texture_rect(
@@ -211,23 +211,22 @@ class GameWindow(arcade.Window):
             self.heart_texture,
             arcade.XYWH(start_x, start_y, self.heart_size, self.heart_size)
         )
-        
-        arcade.draw_text(
+
+        arcade.Text(
             f"{self.player.current_health}",
             start_x + 50,
             start_y,
             arcade.color.BLACK,
             18,
             font_name="Arial",
-            anchor_y="center"
-        )
-
+            anchor_y="center").draw()
+        
         arcade.draw_texture_rect(
             self.heart_texture,
             arcade.XYWH(start_x, start_y - 50, self.heart_size, self.heart_size)
         )
         
-        arcade.draw_text(
+        arcade.Text(
             f"{self.player.energy}",
             start_x + 50,
             start_y - 50,
@@ -235,7 +234,7 @@ class GameWindow(arcade.Window):
             18,
             font_name="Arial",
             anchor_y="center"
-        )
+        ).draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
             if button == arcade.MOUSE_BUTTON_LEFT:
