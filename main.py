@@ -2,7 +2,8 @@ import arcade
 import time
 from src.classes.player import Player
 from src.classes.enemy import Enemy
-from src.constants import SCREEN_HEIGHT, SCREEN_TITLE, SCREEN_WIDTH, BUTTON_WIDTH, BUTTON_HEIGHT, PLAYER_SPEED, PLAYER_ATTAC_DISTANCE
+from src.classes.beer import Beer 
+from src.constants import SCREEN_HEIGHT, SCREEN_TITLE, SCREEN_WIDTH, BUTTON_WIDTH, BUTTON_HEIGHT, PLAYER_SPEED, PLAYER_ATTAC_DISTANCE, PLAYER_MAX_HEALTH, BEERS_HEALTH_ADD
 
 CONTROLS = (arcade.key.LEFT, 
             arcade.key.RIGHT, 
@@ -46,6 +47,9 @@ class GameWindow(arcade.Window):
         self.openinig_song.play(volume=0.5)
 
         self.enemies = []
+        self.beers = []
+        for  i in range(2):
+            self.beers.append(Beer())
         self.spawn_timer = 0
         self.spawn_interval = 2.0 
     
@@ -110,6 +114,18 @@ class GameWindow(arcade.Window):
 
     def check_collisions(self):
         current_time = time.time()
+
+        for beer in self.beers:
+            if (abs(self.player.center_x - beer.center_x) < (self.player.width + beer.width)/2 and
+                abs(self.player.center_y - beer.center_y) < (self.player.height + beer.height)/2):
+                    
+                    if self.player.current_health < PLAYER_MAX_HEALTH:
+                        if self.player.current_health + BEERS_HEALTH_ADD < PLAYER_MAX_HEALTH:
+                            self.player.current_health += BEERS_HEALTH_ADD
+                        else:
+                            self.player.current_health = PLAYER_MAX_HEALTH
+
+                        self.beers.remove(beer)
         
         for enemy in self.enemies:
             # Проверяем коллизию с игроком
@@ -203,6 +219,9 @@ class GameWindow(arcade.Window):
 
         for enemy in self.enemies:
             enemy.draw()
+
+        for beer in self.beers:
+            beer.draw()
 
         self.draw_palyer_info()
 
