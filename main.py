@@ -52,7 +52,9 @@ class GameWindow(arcade.Window):
             self.beers.append(Beer())
         self.spawn_timer = 0
         self.spawn_interval = 2.0 
-    
+
+        self.super_power_tooltip_showed = False
+
     def on_draw(self):
         self.clear()  
 
@@ -258,6 +260,18 @@ class GameWindow(arcade.Window):
             anchor_y="center"
         ).draw()
 
+        if self.player.energy == 100 and not self.super_power_tooltip_showed:
+            arcade.Text(
+            f"Нажми F для использования суперспособности",
+            start_x - self.heart_size / 2,
+            start_y - 80,
+            arcade.color.BLACK,
+            10,
+            font_name="Arial",
+            anchor_y="center"
+            ).draw()
+
+
     def on_mouse_press(self, x, y, button, modifiers):
             if button == arcade.MOUSE_BUTTON_LEFT:
                 if self.is_mouse_over_button( self.menu_buttons[2], x, y):
@@ -305,6 +319,7 @@ class GameWindow(arcade.Window):
                             enemy.health -= enemy.health
                         
                     self.player.energy = 0
+                    self.super_power_tooltip_showed = True
 
     def on_key_release(self, symbol, modifiers):
         if self.current_screen == "game" and self.player:
