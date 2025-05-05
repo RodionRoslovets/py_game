@@ -50,6 +50,7 @@ class GameWindow(arcade.Window):
         self.beers = []
         for  i in range(2):
             self.beers.append(Beer())
+
         self.spawn_timer = 0
         self.spawn_interval = 2.0 
 
@@ -91,7 +92,7 @@ class GameWindow(arcade.Window):
         if self.current_screen == 'game':
             self.player.update()
 
-        if self.player and self.player.center_x > SCREEN_WIDTH / 2:
+        if self.player and self.player.center_x > SCREEN_WIDTH / 2 and self.player.center_x + SCREEN_WIDTH / 2 <= SCREEN_WIDTH * 3 :
             self.camera.position = (self.player.center_x, self.camera.position.y)
 
     def update_enemies(self, delta_time):
@@ -326,9 +327,6 @@ class GameWindow(arcade.Window):
             if symbol in CONTROLS:
                 self.player.change_x = 0
                 self.player.change_y = 0
-
-    def change_camera_position():
-        print('change')
 
 def main():
     GameWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
