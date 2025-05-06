@@ -35,6 +35,8 @@ class GameWindow(arcade.Window):
         self.openinig_song = arcade.load_sound("./src/assets/sound/songs/raise_your_horns.wav", streaming=True)
         self.menu_background = arcade.load_texture("./src/assets/images/menu_bg.png")
         self.game_background = arcade.load_texture("./src/assets/images/game-bg.png")
+        self.game_background_2 = arcade.load_texture("./src/assets/images/game-bg-2.png")
+        self.lose_background = arcade.load_texture("./src/assets/images/lose-bg.png")
         self.alpha = 255
         self.heart_texture = arcade.load_texture("./src/assets/images/heart.png")
         self.cage_texture = arcade.load_texture("./src/assets/images/cage.png")
@@ -48,9 +50,13 @@ class GameWindow(arcade.Window):
             "hover": arcade.load_texture("./src/assets/images/btn_hover.png")
         }
         self.menu_buttons = [
-            {"text": "Начать игру", "y": 400, "action": "game"},
+            {"text": "Начать игру", "y": 400, "action": "game_1"},
             {"text": "Настройки", "y": 300, "action": "settings"},
             {"text": "Выход", "y": 200, "action": "exit"}
+        ]
+        self.lose_buttons = [
+            {"text": "Начать заново", "y": 400, "action": "game_1"},
+            {"text": "Выход", "y": 300, "action": "exit"}
         ]
         
         self.player = Player()
@@ -69,6 +75,8 @@ class GameWindow(arcade.Window):
 
         self.super_power_tooltip_showed = False
 
+        self.lose = False
+
     def on_draw(self):
         self.clear()  
 
@@ -80,13 +88,13 @@ class GameWindow(arcade.Window):
             )
         elif self.current_screen == "menu":
             self.draw_menu()
-        elif self.current_screen == "game":
+        elif self.current_screen == "game_1" or self.current_screen == "game_2":
             self.draw_game()
 
     def on_update(self, delta_time):
         current_time = time.time()
 
-        if self.current_screen == 'game':
+        if self.current_screen == 'game_1' or self.current_screen == "game_2":
             self.player.update()
             self.update_enemies(delta_time)
             self.check_enemy_collisions()
@@ -102,13 +110,16 @@ class GameWindow(arcade.Window):
             self.alpha = 0
             self.current_screen = "menu"
 
-        if self.current_screen == 'game':
+        if self.current_screen == 'game_1' or self.current_screen == "game_2":
             self.player.update()
 
         if self.player and self.player.center_x > SCREEN_WIDTH / 2 and self.player.center_x + SCREEN_WIDTH / 2 <= SCREEN_WIDTH * 3 :
             self.camera.position = (self.player.center_x, self.camera.position.y)
 
     def update_enemies(self, delta_time):
+        if self.lose: 
+            return
+
         self.spawn_timer += delta_time
         
         # Спавн только если игрок не у правой границы
@@ -225,10 +236,18 @@ class GameWindow(arcade.Window):
             ).draw()
 
     def draw_game(self):
-        arcade.draw_texture_rect(
-            self.game_background,
-            arcade.XYWH(SCREEN_WIDTH * 3  / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH * 3, SCREEN_HEIGHT),
-        )
+        if self.current_screen == 'game_1':
+            arcade.draw_texture_rect(
+                self.game_background,
+                arcade.XYWH(SCREEN_WIDTH * 3  / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH * 3, SCREEN_HEIGHT),
+                alpha= 128 if self.lose else 255
+            )
+        elif self.current_screen == 'game_2':
+            arcade.draw_texture_rect(
+                self.game_background_2,
+                arcade.XYWH(SCREEN_WIDTH * 3  / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH * 3, SCREEN_HEIGHT),
+                alpha= 128 if self.lose else 255
+            )
 
         self.player.draw()
         self.camera.use()
@@ -254,6 +273,28 @@ class GameWindow(arcade.Window):
         else:
             self.player.cage_ruined = True
 
+        if self.player.current_health == 0:
+            self.lose = True
+
+            arcade.draw_texture_rect(
+                self.lose_background,
+                arcade.XYWH(self.camera.position.x, SCREEN_HEIGHT / 2, 577, 307),
+            )
+
+            for button in self.lose_buttons:
+                texture = self.button_textures["hover" if self.is_mouse_over_button(button) else "normal"]
+                
+                arcade.draw_texture_rect(
+                    texture,
+                    arcade.XYWH(self.camera.position.x, button['y'], BUTTON_WIDTH, BUTTON_HEIGHT),
+                )
+                
+                arcade.Text(
+                    button["text"],
+                    self.camera.position.x, button["y"],
+                    arcade.color.BLACK, 24,
+                    anchor_x="center", anchor_y="center"
+                ).draw()
 
     def draw_palyer_info(self):
         start_x = self.camera.position.x - (SCREEN_WIDTH / 2) + 30
@@ -301,11 +342,11 @@ class GameWindow(arcade.Window):
 
 
     def on_mouse_press(self, x, y, button, modifiers):
-            if button == arcade.MOUSE_BUTTON_LEFT:
-                if self.is_mouse_over_button( self.menu_buttons[2], x, y):
-                    self.handle_button_click("exit")
-                elif self.is_mouse_over_button( self.menu_buttons[0], x, y):
-                    self.handle_button_click("start")
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            if self.is_mouse_over_button( self.menu_buttons[2], x, y) or self.is_mouse_over_button( self.lose_buttons[1], x, y):
+                self.handle_button_click("exit")
+            elif self.is_mouse_over_button( self.menu_buttons[0], x, y) or self.is_mouse_over_button( self.lose_buttons[0], x, y):
+                self.handle_button_click("start")
             
         
     def is_mouse_over_button(self, button, x=None, y=None):
@@ -319,10 +360,22 @@ class GameWindow(arcade.Window):
         if action == "exit":
             arcade.close_window()
         elif action == "start":
-            self.current_screen = "game"
+            self.current_screen = "game_1"
+
+            if self.lose:
+                self.lose = False
+                self.player.current_health = PLAYER_MAX_HEALTH
+                self.player.energy = 0
+                self.player.center_x = SCREEN_WIDTH // 2
+                self.player.center_y = 100
+                self.camera.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT / 2)
+                self.enemies = []
 
     def on_key_press(self, symbol, modifiers):
-        if self.current_screen == "game" and self.player:
+        if self.lose: 
+            return
+
+        if (self.current_screen == "game_1"  or self.current_screen == "game_2") and self.player:
             if symbol == arcade.key.LEFT or symbol == arcade.key.A:
                 self.player.change_x = -PLAYER_SPEED
                 self.player.move_direction = 'left'
@@ -360,7 +413,7 @@ class GameWindow(arcade.Window):
                     self.super_power_tooltip_showed = True
 
     def on_key_release(self, symbol, modifiers):
-        if self.current_screen == "game" and self.player:
+        if (self.current_screen == "game_1"  or self.current_screen == "game_2") and self.player:
             if symbol in CONTROLS:
                 self.player.change_x = 0
                 self.player.change_y = 0
