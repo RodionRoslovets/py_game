@@ -37,6 +37,7 @@ class GameWindow(arcade.Window):
         self.game_background = arcade.load_texture("./src/assets/images/game-bg.png")
         self.game_background_2 = arcade.load_texture("./src/assets/images/game-bg-2.png")
         self.lose_background = arcade.load_texture("./src/assets/images/lose-bg.png")
+        self.end_1_lvl_background = arcade.load_texture("./src/assets/images/end-1-level.png")
         self.alpha = 255
         self.heart_texture = arcade.load_texture("./src/assets/images/heart.png")
         self.cage_texture = arcade.load_texture("./src/assets/images/cage.png")
@@ -56,6 +57,10 @@ class GameWindow(arcade.Window):
         ]
         self.lose_buttons = [
             {"text": "Начать заново", "y": 400, "action": "game_1"},
+            {"text": "Выход", "y": 300, "action": "exit"}
+        ]
+        self.end_1_buttons = [
+            {"text": "Продолжить", "y": 400, "action": "game_2"},
             {"text": "Выход", "y": 300, "action": "exit"}
         ]
         
@@ -296,6 +301,26 @@ class GameWindow(arcade.Window):
                     anchor_x="center", anchor_y="center"
                 ).draw()
 
+        if self.player.center_x >= SCREEN_WIDTH * 3 - 50 and self.player.center_y >= SCREEN_HEIGHT / 3 - 25 and self.player.center_y < SCREEN_HEIGHT / 3 + 25:
+            arcade.draw_texture_rect(
+                self.end_1_lvl_background,
+                arcade.XYWH(self.camera.position.x, SCREEN_HEIGHT / 2, 577, 307),
+            )
+            for button in self.end_1_buttons:
+                texture = self.button_textures["hover" if self.is_mouse_over_button(button) else "normal"]
+                
+                arcade.draw_texture_rect(
+                    texture,
+                    arcade.XYWH(self.camera.position.x, button['y'], BUTTON_WIDTH, BUTTON_HEIGHT),
+                )
+                
+                arcade.Text(
+                    button["text"],
+                    self.camera.position.x, button["y"],
+                    arcade.color.BLACK, 24,
+                    anchor_x="center", anchor_y="center"
+                ).draw()
+
     def draw_palyer_info(self):
         start_x = self.camera.position.x - (SCREEN_WIDTH / 2) + 30
         start_y = SCREEN_HEIGHT - 50
@@ -343,11 +368,15 @@ class GameWindow(arcade.Window):
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_LEFT:
-            if self.is_mouse_over_button( self.menu_buttons[2], x, y) or self.is_mouse_over_button( self.lose_buttons[1], x, y):
+            if ((self.is_mouse_over_button( self.menu_buttons[2], x, y) or 
+                self.is_mouse_over_button( self.lose_buttons[1], x, y) or 
+                self.is_mouse_over_button( self.end_1_buttons[1], x, y))):
                 self.handle_button_click("exit")
-            elif self.is_mouse_over_button( self.menu_buttons[0], x, y) or self.is_mouse_over_button( self.lose_buttons[0], x, y):
+            elif ((self.is_mouse_over_button( self.menu_buttons[0], x, y) and self.current_screen == 'menu') or 
+                  (self.is_mouse_over_button( self.lose_buttons[0], x, y) and self.lose)):
                 self.handle_button_click("start")
-            
+            elif self.is_mouse_over_button( self.end_1_buttons[0], x, y):
+                self.handle_button_click('continue')
         
     def is_mouse_over_button(self, button, x=None, y=None):
         if x is None or y is None:
@@ -370,6 +399,14 @@ class GameWindow(arcade.Window):
                 self.player.center_y = 100
                 self.camera.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT / 2)
                 self.enemies = []
+        elif action == 'continue':
+            self.current_screen = "game_2"
+            self.player.current_health = PLAYER_MAX_HEALTH
+            self.player.energy = 0
+            self.player.center_x = SCREEN_WIDTH // 2
+            self.player.center_y = 100
+            self.camera.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT / 2)
+            self.enemies = []
 
     def on_key_press(self, symbol, modifiers):
         if self.lose: 
