@@ -1,5 +1,5 @@
 import arcade
-from src.constants import SCREEN_HEIGHT, SCREEN_WIDTH, PLAYER_MAX_HEALTH
+from src.constants import SCREEN_HEIGHT, SCREEN_WIDTH, PLAYER_MAX_HEALTH, PLAYER_ATTAC_DISTANCE, CAGE_WIDTH
 
 class Player:
     def __init__(self):
@@ -16,7 +16,17 @@ class Player:
         self.change_x = 0
         self.change_y = 0
 
+        self.move_direction = None
+
+        self.cage_ruined = False
+
     def update(self):
+        if (abs(self.center_x + PLAYER_ATTAC_DISTANCE) >= SCREEN_WIDTH * 3 - CAGE_WIDTH and 
+            self.move_direction == 'right' and 
+            not self.cage_ruined):
+            self.change_x = 0
+            self.change_y = 0
+
         self.center_x += self.change_x
         self.center_y += self.change_y
 

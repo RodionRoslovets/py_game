@@ -3,7 +3,17 @@ import time
 from src.classes.player import Player
 from src.classes.enemy import Enemy
 from src.classes.beer import Beer 
-from src.constants import SCREEN_HEIGHT, SCREEN_TITLE, SCREEN_WIDTH, BUTTON_WIDTH, BUTTON_HEIGHT, PLAYER_SPEED, PLAYER_ATTAC_DISTANCE, PLAYER_MAX_HEALTH, BEERS_HEALTH_ADD
+from src.constants import (SCREEN_HEIGHT, 
+                           SCREEN_TITLE, 
+                           SCREEN_WIDTH, 
+                           BUTTON_WIDTH, 
+                           BUTTON_HEIGHT, 
+                           PLAYER_SPEED, 
+                           PLAYER_ATTAC_DISTANCE, 
+                           PLAYER_MAX_HEALTH, 
+                           BEERS_HEALTH_ADD, 
+                           CAGE_WIDTH,
+                           CAGE_HEIGHT)
 
 CONTROLS = (arcade.key.LEFT, 
             arcade.key.RIGHT, 
@@ -27,6 +37,9 @@ class GameWindow(arcade.Window):
         self.game_background = arcade.load_texture("./src/assets/images/game-bg.png")
         self.alpha = 255
         self.heart_texture = arcade.load_texture("./src/assets/images/heart.png")
+        self.cage_texture = arcade.load_texture("./src/assets/images/cage.png")
+        self.cage_health = 500
+        self.friend_texture = arcade.load_texture("./src/assets/images/friend.png")
         self.heart_size = 30
         self.start_time = time.time()
         self.fade_out_started = False
@@ -228,6 +241,20 @@ class GameWindow(arcade.Window):
 
         self.draw_palyer_info()
 
+        arcade.draw_texture_rect(
+            self.friend_texture,
+            arcade.XYWH(SCREEN_WIDTH * 3 - 25, SCREEN_HEIGHT / 3, 50, 50),
+        )
+
+        if self.cage_health != 0:
+            arcade.draw_texture_rect(
+                self.cage_texture,
+                arcade.XYWH(SCREEN_WIDTH * 3 - CAGE_WIDTH / 2, SCREEN_HEIGHT / 3, CAGE_WIDTH, CAGE_HEIGHT),
+            )
+        else:
+            self.player.cage_ruined = True
+
+
     def draw_palyer_info(self):
         start_x = self.camera.position.x - (SCREEN_WIDTH / 2) + 30
         start_y = SCREEN_HEIGHT - 50
@@ -298,19 +325,29 @@ class GameWindow(arcade.Window):
         if self.current_screen == "game" and self.player:
             if symbol == arcade.key.LEFT or symbol == arcade.key.A:
                 self.player.change_x = -PLAYER_SPEED
+                self.player.move_direction = 'left'
             elif symbol == arcade.key.RIGHT or symbol == arcade.key.D:
                 self.player.change_x = PLAYER_SPEED
+                self.player.move_direction = 'right'
             elif symbol == arcade.key.UP or symbol == arcade.key.W:
+                self.player.move_direction = 'up'
                 self.player.change_y = PLAYER_SPEED
             elif symbol == arcade.key.DOWN or symbol == arcade.key.S:
+                self.player.move_direction = 'down'
                 self.player.change_y = -PLAYER_SPEED
             # Базовая атака
-            elif symbol == arcade.key.SPACE:
+            if symbol == arcade.key.SPACE:
                 for enemy in self.enemies:
                     if (abs(self.player.center_x + PLAYER_ATTAC_DISTANCE - enemy.center_x) < (self.player.width + PLAYER_ATTAC_DISTANCE + enemy.width)/2 and
                         abs(self.player.center_y + PLAYER_ATTAC_DISTANCE - enemy.center_y) < (self.player.height + PLAYER_ATTAC_DISTANCE + enemy.height)/2):
 
                         enemy.health -= 50
+
+                if (abs(self.player.center_x + PLAYER_ATTAC_DISTANCE) >= SCREEN_WIDTH * 3 - CAGE_WIDTH and
+                    self.player.center_y >= SCREEN_HEIGHT / 3 - CAGE_HEIGHT / 2 and
+                    self.player.center_y < SCREEN_HEIGHT / 3 + CAGE_HEIGHT / 2 and
+                    self.cage_health > 0):
+                    self.cage_health -= 50
 
             # Особая атака
             elif symbol == arcade.key.F:
@@ -327,6 +364,7 @@ class GameWindow(arcade.Window):
             if symbol in CONTROLS:
                 self.player.change_x = 0
                 self.player.change_y = 0
+                self.player.move_direction = None
 
 def main():
     GameWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
