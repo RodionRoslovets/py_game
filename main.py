@@ -13,7 +13,10 @@ from src.constants import (SCREEN_HEIGHT,
                            PLAYER_MAX_HEALTH, 
                            BEERS_HEALTH_ADD, 
                            CAGE_WIDTH,
-                           CAGE_HEIGHT)
+                           CAGE_HEIGHT,
+                           BOSS_WIDTH,
+                           BOSS_HEIGHT
+                           )
 
 CONTROLS = (arcade.key.LEFT, 
             arcade.key.RIGHT, 
@@ -38,6 +41,10 @@ class GameWindow(arcade.Window):
         self.game_background_2 = arcade.load_texture("./src/assets/images/game-bg-2.png")
         self.lose_background = arcade.load_texture("./src/assets/images/lose-bg.png")
         self.end_1_lvl_background = arcade.load_texture("./src/assets/images/end-1-level.png")
+        self.boss_texture = arcade.load_texture("./src/assets/images/boss.png")
+        self.boss_health = 500
+        self.boss_last_damage_time = 0
+        self.game_finished = False
         self.alpha = 255
         self.heart_texture = arcade.load_texture("./src/assets/images/heart.png")
         self.cage_texture = arcade.load_texture("./src/assets/images/cage.png")
@@ -81,6 +88,7 @@ class GameWindow(arcade.Window):
         self.super_power_tooltip_showed = False
 
         self.lose = False
+        self.game_stoped = False
 
     def on_draw(self):
         self.clear()  
@@ -122,7 +130,7 @@ class GameWindow(arcade.Window):
             self.camera.position = (self.player.center_x, self.camera.position.y)
 
     def update_enemies(self, delta_time):
-        if self.lose: 
+        if self.lose or self.game_stoped: 
             return
 
         self.spawn_timer += delta_time
@@ -172,6 +180,15 @@ class GameWindow(arcade.Window):
                     enemy.last_damage_time = current_time
             else:
                 enemy.moving = True
+
+        if (self.current_screen == 'game_2' and
+             ((self.player.center_x + self.player.width / 2 + PLAYER_ATTAC_DISTANCE) >= SCREEN_WIDTH * 3 - BOSS_WIDTH) and
+               ( (self.player.center_y) < SCREEN_HEIGHT / 3 + BOSS_HEIGHT / 2) and
+               ( (self.player.center_y) > SCREEN_HEIGHT / 3 - BOSS_HEIGHT / 2)
+            ):
+            if current_time - self.boss_last_damage_time >= 3.0 and not self.game_finished:
+                self.player.current_health = max(0, self.player.current_health - 20)
+                self.boss_last_damage_time = current_time
 
     def check_enemy_collisions(self):
         # Проверяем коллизии между всеми парами врагов
@@ -245,14 +262,57 @@ class GameWindow(arcade.Window):
             arcade.draw_texture_rect(
                 self.game_background,
                 arcade.XYWH(SCREEN_WIDTH * 3  / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH * 3, SCREEN_HEIGHT),
-                alpha= 128 if self.lose else 255
+                alpha= 128 if self.lose or self.game_stoped else 255
             )
+
+            if self.cage_health != 0:
+                arcade.draw_texture_rect(
+                    self.cage_texture,
+                    arcade.XYWH(SCREEN_WIDTH * 3 - CAGE_WIDTH / 2, SCREEN_HEIGHT / 3, CAGE_WIDTH, CAGE_HEIGHT),
+                )
+            else:
+                self.player.cage_ruined = True
+
+            arcade.draw_texture_rect(
+                self.friend_texture,
+                arcade.XYWH(SCREEN_WIDTH * 3 - 25, SCREEN_HEIGHT / 3, 50, 50),
+            )
+
+            if self.player.center_x >= SCREEN_WIDTH * 3 - 50 and self.player.center_y >= SCREEN_HEIGHT / 3 - 25 and self.player.center_y < SCREEN_HEIGHT / 3 + 25:
+                self.game_stoped = True
+
+                arcade.draw_texture_rect(
+                    self.end_1_lvl_background,
+                    arcade.XYWH(self.camera.position.x, SCREEN_HEIGHT / 2, 577, 307),
+                )
+                for button in self.end_1_buttons:
+                    texture = self.button_textures["hover" if self.is_mouse_over_button(button) else "normal"]
+                    
+                    arcade.draw_texture_rect(
+                        texture,
+                        arcade.XYWH(self.camera.position.x, button['y'], BUTTON_WIDTH, BUTTON_HEIGHT),
+                    )
+                    
+                    arcade.Text(
+                        button["text"],
+                        self.camera.position.x, button["y"],
+                        arcade.color.BLACK, 24,
+                        anchor_x="center", anchor_y="center"
+                    ).draw()
+
         elif self.current_screen == 'game_2':
             arcade.draw_texture_rect(
                 self.game_background_2,
                 arcade.XYWH(SCREEN_WIDTH * 3  / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH * 3, SCREEN_HEIGHT),
-                alpha= 128 if self.lose else 255
+                alpha= 128 if self.lose or self.game_stoped else 255
             )
+            if self.boss_health != 0:
+                arcade.draw_texture_rect(
+                    self.boss_texture,
+                    arcade.XYWH(SCREEN_WIDTH * 3 - BOSS_WIDTH / 2, SCREEN_HEIGHT / 3, BOSS_WIDTH, BOSS_HEIGHT),
+                )
+            else:
+                self.game_finished = True
 
         self.player.draw()
         self.camera.use()
@@ -264,19 +324,6 @@ class GameWindow(arcade.Window):
             beer.draw()
 
         self.draw_palyer_info()
-
-        arcade.draw_texture_rect(
-            self.friend_texture,
-            arcade.XYWH(SCREEN_WIDTH * 3 - 25, SCREEN_HEIGHT / 3, 50, 50),
-        )
-
-        if self.cage_health != 0:
-            arcade.draw_texture_rect(
-                self.cage_texture,
-                arcade.XYWH(SCREEN_WIDTH * 3 - CAGE_WIDTH / 2, SCREEN_HEIGHT / 3, CAGE_WIDTH, CAGE_HEIGHT),
-            )
-        else:
-            self.player.cage_ruined = True
 
         if self.player.current_health == 0:
             self.lose = True
@@ -301,25 +348,7 @@ class GameWindow(arcade.Window):
                     anchor_x="center", anchor_y="center"
                 ).draw()
 
-        if self.player.center_x >= SCREEN_WIDTH * 3 - 50 and self.player.center_y >= SCREEN_HEIGHT / 3 - 25 and self.player.center_y < SCREEN_HEIGHT / 3 + 25:
-            arcade.draw_texture_rect(
-                self.end_1_lvl_background,
-                arcade.XYWH(self.camera.position.x, SCREEN_HEIGHT / 2, 577, 307),
-            )
-            for button in self.end_1_buttons:
-                texture = self.button_textures["hover" if self.is_mouse_over_button(button) else "normal"]
-                
-                arcade.draw_texture_rect(
-                    texture,
-                    arcade.XYWH(self.camera.position.x, button['y'], BUTTON_WIDTH, BUTTON_HEIGHT),
-                )
-                
-                arcade.Text(
-                    button["text"],
-                    self.camera.position.x, button["y"],
-                    arcade.color.BLACK, 24,
-                    anchor_x="center", anchor_y="center"
-                ).draw()
+        
 
     def draw_palyer_info(self):
         start_x = self.camera.position.x - (SCREEN_WIDTH / 2) + 30
@@ -390,6 +419,7 @@ class GameWindow(arcade.Window):
             arcade.close_window()
         elif action == "start":
             self.current_screen = "game_1"
+            self.player.current_screen = "game_1"
 
             if self.lose:
                 self.lose = False
@@ -401,16 +431,20 @@ class GameWindow(arcade.Window):
                 self.enemies = []
         elif action == 'continue':
             self.current_screen = "game_2"
+            self.player.current_screen = "game_2"
+            self.game_stoped = False
             self.player.current_health = PLAYER_MAX_HEALTH
             self.player.energy = 0
             self.player.center_x = SCREEN_WIDTH // 2
             self.player.center_y = 100
             self.camera.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT / 2)
             self.enemies = []
+            self.beers = []
 
     def on_key_press(self, symbol, modifiers):
-        if self.lose: 
+        if self.lose or self.game_stoped: 
             return
+        current_time = time.time()
 
         if (self.current_screen == "game_1"  or self.current_screen == "game_2") and self.player:
             if symbol == arcade.key.LEFT or symbol == arcade.key.A:
@@ -426,7 +460,7 @@ class GameWindow(arcade.Window):
                 self.player.move_direction = 'down'
                 self.player.change_y = -PLAYER_SPEED
             # Базовая атака
-            if symbol == arcade.key.SPACE:
+            if symbol == arcade.key.SPACE and current_time - self.player.last_damage_time >= 1.0:
                 for enemy in self.enemies:
                     if (abs(self.player.center_x + PLAYER_ATTAC_DISTANCE - enemy.center_x) < (self.player.width + PLAYER_ATTAC_DISTANCE + enemy.width)/2 and
                         abs(self.player.center_y + PLAYER_ATTAC_DISTANCE - enemy.center_y) < (self.player.height + PLAYER_ATTAC_DISTANCE + enemy.height)/2):
@@ -436,8 +470,18 @@ class GameWindow(arcade.Window):
                 if (abs(self.player.center_x + PLAYER_ATTAC_DISTANCE) >= SCREEN_WIDTH * 3 - CAGE_WIDTH and
                     self.player.center_y >= SCREEN_HEIGHT / 3 - CAGE_HEIGHT / 2 and
                     self.player.center_y < SCREEN_HEIGHT / 3 + CAGE_HEIGHT / 2 and
-                    self.cage_health > 0):
+                    self.cage_health > 0 and
+                    self.current_screen == 'game_1'):
                     self.cage_health -= 50
+
+                if (abs(self.player.center_x + PLAYER_ATTAC_DISTANCE) >= SCREEN_WIDTH * 3 - BOSS_WIDTH and
+                    self.player.center_y >= SCREEN_HEIGHT / 3 - BOSS_HEIGHT / 2 and
+                    self.player.center_y < SCREEN_HEIGHT / 3 + BOSS_HEIGHT / 2 and
+                    self.boss_health > 0 and
+                    self.current_screen == 'game_2'):
+                    self.boss_health -= 50
+
+                self.player.last_damage_time = current_time
 
             # Особая атака
             elif symbol == arcade.key.F:
