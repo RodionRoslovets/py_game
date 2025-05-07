@@ -314,6 +314,17 @@ class GameWindow(arcade.Window):
             else:
                 self.game_finished = True
 
+                arcade.draw_texture_rect(
+                    self.end_1_lvl_background,
+                    arcade.XYWH(self.camera.position.x, SCREEN_HEIGHT / 2, 577, 307),
+                )
+                arcade.Text(
+                        "Вы победили",
+                        self.camera.position.x, SCREEN_HEIGHT / 2,
+                        arcade.color.BLACK, 24,
+                        anchor_x="center", anchor_y="center"
+                    ).draw()
+
         self.player.draw()
         self.camera.use()
 
